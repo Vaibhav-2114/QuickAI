@@ -1,8 +1,9 @@
-import React, { use, useState } from 'react'
+import React, { useState } from 'react'
 import { Edit, Sparkles } from 'lucide-react'
 import axios from 'axios'
 import { useAuth } from '@clerk/react';
 import toast from 'react-hot-toast';
+import Markdown from 'react-markdown';
 
 axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 
@@ -19,7 +20,7 @@ const WriteArticle = () => {
   const [loading, setLoading] = useState(false)
   const [content, setContent] = useState('')
 
-  const {getToken} = useAuth();
+  const { getToken } = useAuth();
 
   const onSubmitHandler = async (e) => {
     e.preventDefault()
@@ -27,8 +28,8 @@ const WriteArticle = () => {
       setLoading(true)
       const prompt = `Write and Article about ${input} in ${selectedLength.text}`
 
-      const {data} = await axios.post('/api/ai/generate-article', {prompt, length:selectedLength.length}, {
-        headers: {Authorization: `Bearer ${await getToken()}`}
+      const { data } = await axios.post('/api/ai/generate-article', { prompt, length: selectedLength.length }, {
+        headers: { Authorization: `Bearer ${await getToken()}` }
       })
 
       if (data.success) {
@@ -37,7 +38,7 @@ const WriteArticle = () => {
         toast.error(data.message)
       }
     } catch (error) {
-      toast.error(data.message)
+      toast.error(error?.message || 'Failed to generate article')
     }
     setLoading(false)
   }
@@ -92,11 +93,13 @@ const WriteArticle = () => {
             </div>
           </div>
         ) : (
-          <div className='mt-3 h0 full overflow-y-scroll text-sm text-slate-600 '>
-            <div> {content} </div>
+          <div className='mt-3 h-full overflow-y-scroll text-sm text-slate-600 '>
+            <div className='reset-tw'>
+              <Markdown>{content}</Markdown>
+            </div>
           </div>
         )}
-        
+
       </div>
     </div>
   )

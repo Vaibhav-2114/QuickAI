@@ -16,8 +16,7 @@ app.use(clerkMiddleware())
 
 app.get('/', (req, res) => res.send('Server is Live'))
 
-app.use(requireAuth())
-
+// Use route-level authentication (per-route `auth` middleware)
 app.use('/api/ai', aiRouter)
 app.use('/api/user', userRouter)
 
