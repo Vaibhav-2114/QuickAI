@@ -1,16 +1,34 @@
 import React, { useEffect, useState } from 'react'
-import { dummyCreationData } from '../assets/assets'
 import { Gem, Sparkles } from 'lucide-react'
 import { useAuth } from '@clerk/react'
+import axios from 'axios'
+import toast from 'react-hot-toast'
 import CreationItem from '../components/CreationItem'
+
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL
 
 const Dashboard = () => {
 
   const [creations, setCreations] = useState([])
-  const { has } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const { has, getToken } = useAuth()
 
   const getDashboardData = async () => {
-    setCreations(dummyCreationData)
+    try {
+      setLoading(true)
+      const { data } = await axios.get('/api/user/get-user-creations', {
+        headers: { Authorization: `Bearer ${await getToken()}` }
+      })
+
+      if (data.success) {
+        setCreations(data.creations)
+      } else {
+        toast.error(data.message)
+      }
+    } catch (error) {
+      toast.error(error?.message || 'Failed to load creations')
+    }
+    setLoading(false)
   }
 
   useEffect(() => {
@@ -20,7 +38,6 @@ const Dashboard = () => {
   return (
     <div className='h-full overflow-y-scroll p-6'>
       <div className='flex justify-start gap-4 flex-wrap'>
-        {/* Total Creations Card */}
         <div className='flex justify-between items-center w-72 p-4 px-6 bg-white rounded-xl border border-gray-200'>
           <div className='text-slate-600'>
             <p className='text-sm'>Total Creations</p>
@@ -31,7 +48,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Active Plan Card */}
         <div className='flex justify-between items-center w-72 p-4 px-6 bg-white rounded-xl border border-gray-200'>
           <div className='text-slate-600'>
             <p className='text-sm'>Active Plan</p>
@@ -45,9 +61,13 @@ const Dashboard = () => {
 
       <div className='space-y-3'>
         <p className='mt-6 mb-4'>Recent Creations</p>
-        {
+        {loading ? (
+          <p className='text-sm text-gray-500'>Loading your creations...</p>
+        ) : creations.length === 0 ? (
+          <p className='text-sm text-gray-500'>No creations yet. Use an AI tool to get started.</p>
+        ) : (
           creations.map((item) => <CreationItem key={item.id} item={item} />)
-        }
+        )}
       </div>
     </div>
   )

@@ -38,7 +38,7 @@ const WriteArticle = () => {
         toast.error(data.message)
       }
     } catch (error) {
-      toast.error(error?.message || 'Failed to generate article')
+      toast.error(error?.response?.data?.message || error?.message || 'Failed to generate article')
     }
     setLoading(false)
   }

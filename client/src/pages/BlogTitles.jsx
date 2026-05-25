@@ -69,8 +69,12 @@ const BlogTitles = () => {
           <Hash className='w-5 h-5 text-[#8E37EB]' />
           <h1 className='text-xl font-semibold'>Generated Titles</h1>
         </div>
-        {
-          !content ? (
+        {loading ? (
+          <div className='flex-1 flex flex-col justify-center items-center gap-5 text-purple-400'>
+            <span className='w-8 h-8 rounded-full border-4 border-t-transparent animate-spin'></span>
+            <p>Generating titles...</p>
+          </div>
+        ) : !content ? (
             <div className='flex-1 flex justify-center items-center'>
               <div className='text-sm flex flex-col items-center gap-5 text-gray-400'>
                 <Hash className='w-9 h-9' />
