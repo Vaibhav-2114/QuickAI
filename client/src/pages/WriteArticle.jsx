@@ -4,6 +4,7 @@ import axios from 'axios'
 import { useAuth } from '@clerk/react';
 import toast from 'react-hot-toast';
 import Markdown from 'react-markdown';
+import OutputActions from '../components/OutputActions';
 
 axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 
@@ -26,9 +27,11 @@ const WriteArticle = () => {
     e.preventDefault()
     try {
       setLoading(true)
-      const prompt = `Write and Article about ${input} in ${selectedLength.text}`
-
-      const { data } = await axios.post('/api/ai/generate-article', { prompt, length: selectedLength.length }, {
+      const { data } = await axios.post('/api/ai/generate-article', {
+        topic: input,
+        length: selectedLength.length,
+        lengthLabel: selectedLength.text,
+      }, {
         headers: { Authorization: `Bearer ${await getToken()}` }
       })
 
@@ -93,11 +96,14 @@ const WriteArticle = () => {
             </div>
           </div>
         ) : (
-          <div className='mt-3 h-full overflow-y-scroll text-sm text-slate-600 '>
-            <div className='reset-tw'>
-              <Markdown>{content}</Markdown>
+          <>
+            <OutputActions content={content} theme='blue' filename='article' />
+            <div className='mt-3 flex-1 overflow-y-scroll text-sm text-slate-600'>
+              <div className='reset-tw'>
+                <Markdown>{content}</Markdown>
+              </div>
             </div>
-          </div>
+          </>
         )}
 
       </div>

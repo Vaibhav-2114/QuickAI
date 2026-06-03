@@ -3,6 +3,7 @@ import { Image, Sparkles } from 'lucide-react'
 import axios from 'axios'
 import { useAuth } from '@clerk/react'
 import toast from 'react-hot-toast'
+import OutputActions from '../components/OutputActions'
 
 axios.defaults.baseURL = import.meta.env.VITE_BASE_URL
 
@@ -14,7 +15,10 @@ const GenerateImages = () => {
   const [input, setInput] = useState('')
   const [publish, setPublish] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [publishLoading, setPublishLoading] = useState(false)
   const [content, setContent] = useState('')
+  const [creationId, setCreationId] = useState(null)
+  const [isPublished, setIsPublished] = useState(false)
 
   const { getToken } = useAuth()
 
@@ -22,6 +26,7 @@ const GenerateImages = () => {
     e.preventDefault()
     try {
       setLoading(true)
+      setCreationId(null)
       const prompt = `Generate an image of ${input} in ${selectedStyle} style`
 
       const { data } = await axios.post('/api/ai/generate-image', { prompt, publish }, {
@@ -30,6 +35,8 @@ const GenerateImages = () => {
 
       if (data.success) {
         setContent(data.content)
+        setCreationId(data.creationId ?? null)
+        setIsPublished(!!data.publish)
       } else {
         toast.error(data.message)
       }
@@ -37,6 +44,27 @@ const GenerateImages = () => {
       toast.error(error?.response?.data?.message || error.message || 'Failed to generate image')
     }
     setLoading(false)
+  }
+
+  const handlePublishChange = async (checked) => {
+    if (!creationId) return
+    try {
+      setPublishLoading(true)
+      const { data } = await axios.post(
+        '/api/user/toggle-publish-creation',
+        { id: creationId, publish: checked },
+        { headers: { Authorization: `Bearer ${await getToken()}` } }
+      )
+      if (data.success) {
+        setIsPublished(data.publish)
+        toast.success(data.message)
+      } else {
+        toast.error(data.message)
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error.message || 'Failed to update visibility')
+    }
+    setPublishLoading(false)
   }
 
   return (
@@ -91,7 +119,19 @@ const GenerateImages = () => {
             </div>
           </div>
         ) : (
-          <img src={content} alt="Generated" className='mt-4 w-full rounded-lg' />
+          <>
+            <OutputActions
+              content={content}
+              type='image'
+              theme='green'
+              filename='generated-image'
+              creationId={creationId}
+              isPublished={isPublished}
+              onPublishChange={handlePublishChange}
+              publishLoading={publishLoading}
+            />
+            <img src={content} alt="Generated" className='mt-3 w-full rounded-lg' />
+          </>
         )}
       </div>
     </div>

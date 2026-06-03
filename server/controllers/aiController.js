@@ -20,10 +20,66 @@ const deleteUploadedFile = (file) => {
     }
 }
 
+// Client sends a word-count target (800 / 1200 / 1600), not output tokens.
+const getArticleMaxTokens = (wordTarget) => {
+    if (wordTarget <= 800) return 2000
+    if (wordTarget <= 1200) return 3200
+    return 5000
+}
+
+const buildArticlePrompt = (topic, wordTarget, lengthLabel) => {
+    const range =
+        wordTarget <= 800
+            ? '500–800 words'
+            : wordTarget <= 1200
+              ? '800–1200 words'
+              : 'at least 1200 words'
+
+    return `Write a complete article about: ${topic}
+
+Length: ${lengthLabel} (${range}).
+
+Requirements:
+- Include a clear introduction, well-developed body sections (use headings where helpful), and a conclusion.
+- Write the full article in one pass. Do not stop mid-sentence, mid-paragraph, or mid-list.
+- Every section and bullet list must be finished before you end.
+- Aim for the target word count; prioritize a polished, complete ending over padding.`
+}
+
+const buildBlogTitlePrompt = (keyword, category) => `Generate exactly 10 unique, engaging blog post titles for the keyword "${keyword}" in the ${category} category.
+
+Format:
+- Use a numbered markdown list (1. through 10.).
+- One title per line; keep titles concise and click-worthy.
+- Do not include extra commentary before or after the list.
+
+Requirements:
+- Provide all 10 titles completely.
+- Do not stop mid-list or mid-sentence.`
+
+const buildResumeReviewPrompt = (resumeText) => `Review the following resume and provide constructive, actionable feedback.
+
+Structure your response in markdown with these sections (use ## headings):
+## Overall Impression
+## Strengths
+## Weaknesses
+## Areas for Improvement
+## Specific Recommendations
+## Summary
+
+Requirements:
+- Complete every section with clear bullet points or short paragraphs.
+- Do not stop mid-sentence, mid-paragraph, or mid-bullet list.
+- End with a finished Summary section.
+
+Resume content:
+
+${resumeText}`
+
 export const generateArticle = async (req, res) => {
     try {
         const { userId } = req.auth();
-        const { prompt, length } = req.body;
+        const { prompt, length, lengthLabel, topic } = req.body;
         const plan = req.plan;
         const free_usage = req.free_usage;
 
@@ -31,12 +87,20 @@ export const generateArticle = async (req, res) => {
             return res.json({ success: false, message: "Limit reached. Upgrade to continue" })
         }
 
+        const wordTarget = Number(length) || 800
+        const articlePrompt = buildArticlePrompt(
+            topic || prompt,
+            wordTarget,
+            lengthLabel || 'Short (500-800 words)'
+        )
+
         const content = await createGeminiCompletion({
-            messages: [{ role: "user", content: prompt }],
-            max_tokens: length,
+            messages: [{ role: "user", content: articlePrompt }],
+            max_tokens: getArticleMaxTokens(wordTarget),
         })
 
-        await sql`INSERT INTO creations (user_id, prompt, content, type) VALUES (${userId}, ${prompt}, ${content}, 'article')`
+        const storedPrompt = `Article: ${topic || prompt || 'Untitled'} (${lengthLabel || `${wordTarget} words`})`
+        await sql`INSERT INTO creations (user_id, prompt, content, type) VALUES (${userId}, ${storedPrompt}, ${content}, 'article')`
 
         if (plan !== 'premium') {
             await incrementFreeUsage(userId, free_usage)
@@ -53,7 +117,7 @@ export const generateArticle = async (req, res) => {
 export const generateBlogTitle = async (req, res) => {
     try {
         const { userId } = req.auth()
-        const { prompt } = req.body;
+        const { prompt, keyword, category } = req.body;
         const plan = req.plan;
         const free_usage = req.free_usage;
 
@@ -61,12 +125,16 @@ export const generateBlogTitle = async (req, res) => {
             return res.json({ success: false, message: "Limit reached. Upgrade to continue." })
         }
 
+        const topic = keyword || prompt
+        const blogPrompt = buildBlogTitlePrompt(topic, category || 'General')
+        const storedPrompt = `Blog titles: ${topic} (${category || 'General'})`
+
         const content = await createGeminiCompletion({
-            messages: [{ role: "user", content: prompt }],
-            max_tokens: 100,
+            messages: [{ role: "user", content: blogPrompt }],
+            max_tokens: 1500,
         })
 
-        await sql`INSERT INTO creations (user_id, prompt, content, type) VALUES (${userId}, ${prompt}, ${content}, 'blog-title')`
+        await sql`INSERT INTO creations (user_id, prompt, content, type) VALUES (${userId}, ${storedPrompt}, ${content}, 'blog-title')`
 
         if (plan !== 'premium') {
             await incrementFreeUsage(userId, free_usage)
@@ -103,9 +171,18 @@ export const generateImage = async (req, res) => {
 
         const isPublished = publish === true || publish === 'true'
 
-        await sql`INSERT INTO creations (user_id, prompt, content, type, publish) VALUES (${userId}, ${prompt}, ${secure_url}, 'image', ${isPublished})`
+        const [creation] = await sql`
+            INSERT INTO creations (user_id, prompt, content, type, publish)
+            VALUES (${userId}, ${prompt}, ${secure_url}, 'image', ${isPublished})
+            RETURNING id, publish
+        `
 
-        res.json({ success: true, content: secure_url })
+        res.json({
+            success: true,
+            content: secure_url,
+            creationId: creation.id,
+            publish: creation.publish,
+        })
     } catch (error) {
         console.log('GENERATE_IMAGE_ERROR:', error)
         const message = error?.message ?? error?.response?.data ?? 'Unknown image generation error'
@@ -214,11 +291,11 @@ export const resumeReview = async (req, res) => {
         parser = new PDFParse({ data: dataBuffer })
         const pdfData = await parser.getText()
 
-        const prompt = `Review the following resume and provide constructive feedback on its strengths, weaknesses, and areas for improvement. Resume Content:\n\n${pdfData.text}`
+        const reviewPrompt = buildResumeReviewPrompt(pdfData.text)
 
         const content = await createGeminiCompletion({
-            messages: [{ role: "user", content: prompt }],
-            max_tokens: 1000,
+            messages: [{ role: "user", content: reviewPrompt }],
+            max_tokens: 4096,
         })
 
         await sql`INSERT INTO creations (user_id, prompt, content, type) VALUES (${userId}, 'Review the uploaded resume', ${content}, 'resume-review')`

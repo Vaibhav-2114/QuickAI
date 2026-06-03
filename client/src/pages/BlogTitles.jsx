@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Hash, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast';
 import Markdown from 'react-markdown';
+import OutputActions from '../components/OutputActions';
 import { useAuth } from '@clerk/react';
 import axios from 'axios';
 
@@ -22,9 +23,10 @@ const BlogTitles = () => {
     e.preventDefault()
     try {
       setLoading(true)
-      const prompt = `Generate a blog title for the keyword ${input} in the category of ${selectedCategory}`
-
-      const { data } = await axios.post('/api/ai/generate-blog-title', { prompt }, { headers: { Authorization: `Bearer ${await getToken()}` } })
+      const { data } = await axios.post('/api/ai/generate-blog-title', {
+        keyword: input,
+        category: selectedCategory,
+      }, { headers: { Authorization: `Bearer ${await getToken()}` } })
 
       if (data.success) {
         setContent(data.content)
@@ -32,7 +34,7 @@ const BlogTitles = () => {
         toast.error(data.message)
       }
     } catch (error) {
-      toast.error(error.message)
+      toast.error(error?.response?.data?.message || error.message || 'Failed to generate titles')
     }
     setLoading(false)
   }
@@ -82,11 +84,14 @@ const BlogTitles = () => {
               </div>
             </div>
           ) : (
-            <div className='mt-3 h-full overflow-y-scroll text-sm text-slate-600 '>
-              <div className='reset-tw'>
-                <Markdown>{content}</Markdown>
+            <>
+              <OutputActions content={content} theme='purple' filename='blog-titles' />
+              <div className='mt-3 flex-1 overflow-y-scroll text-sm text-slate-600'>
+                <div className='reset-tw'>
+                  <Markdown>{content}</Markdown>
+                </div>
               </div>
-            </div>
+            </>
           )
         }
 

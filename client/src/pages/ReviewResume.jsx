@@ -5,6 +5,7 @@ import { useAuth } from '@clerk/react'
 import toast from 'react-hot-toast'
 import Markdown from 'react-markdown'
 import FileUploadField from '../components/FileUploadField'
+import OutputActions from '../components/OutputActions'
 
 axios.defaults.baseURL = import.meta.env.VITE_BASE_URL
 
@@ -74,11 +75,14 @@ const ReviewResume = () => {
             </div>
           </div>
         ) : (
-          <div className='mt-3 h-full overflow-y-scroll text-sm text-slate-600'>
-            <div className='reset-tw'>
-              <Markdown>{content}</Markdown>
+          <>
+            <OutputActions content={content} theme='teal' filename='resume-review' />
+            <div className='mt-3 flex-1 overflow-y-scroll text-sm text-slate-600'>
+              <div className='reset-tw'>
+                <Markdown>{content}</Markdown>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>

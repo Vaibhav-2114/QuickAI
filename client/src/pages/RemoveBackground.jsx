@@ -4,6 +4,7 @@ import axios from 'axios'
 import { useAuth } from '@clerk/react'
 import toast from 'react-hot-toast'
 import FileUploadField from '../components/FileUploadField'
+import OutputActions from '../components/OutputActions'
 
 axios.defaults.baseURL = import.meta.env.VITE_BASE_URL
 
@@ -73,7 +74,10 @@ const RemoveBackground = () => {
             </div>
           </div>
         ) : (
-          <img src={content} alt="Processed" className='mt-4 w-full rounded-lg' />
+          <>
+            <OutputActions content={content} type='image' theme='orange' filename='background-removed' />
+            <img src={content} alt="Processed" className='mt-3 w-full rounded-lg' />
+          </>
         )}
       </div>
     </div>

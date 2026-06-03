@@ -22,6 +22,39 @@ export const getPublishedCreations = async (req, res) => {
     }
 }
 
+export const togglePublishCreation = async (req, res) => {
+    try {
+        const { userId } = req.auth()
+        const { id, publish } = req.body
+
+        const [creation] = await sql`
+            SELECT * FROM creations WHERE id = ${id} AND user_id = ${userId}
+        `
+
+        if (!creation) {
+            return res.json({ success: false, message: "Creation not found" })
+        }
+
+        if (creation.type !== 'image') {
+            return res.json({ success: false, message: "Only images can be published to the community" })
+        }
+
+        const isPublished = publish === true || publish === 'true'
+
+        await sql`
+            UPDATE creations SET publish = ${isPublished}, updated_at = NOW() WHERE id = ${id}
+        `
+
+        res.json({
+            success: true,
+            publish: isPublished,
+            message: isPublished ? 'Image is now public' : 'Image is now private',
+        })
+    } catch (error) {
+        res.json({ success: false, message: error.message })
+    }
+}
+
 export const toggleLikeCreation = async (req, res) => {
     try {
         const { userId } = req.auth()
