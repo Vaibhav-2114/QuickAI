@@ -105,7 +105,7 @@ const OutputActions = ({
       <button
         type='button'
         onClick={handleDownload}
-        className={`inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r ${t.gradient} px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90 active:scale-[0.98]`}
+        className={`inline-flex items-center gap-1.5 rounded-lg bg-linear-to-r ${t.gradient} px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90 active:scale-[0.98]`}
       >
         <Download className='w-3.5 h-3.5' />
         Download

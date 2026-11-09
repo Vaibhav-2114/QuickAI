@@ -9,13 +9,23 @@ const Layout = () => {
 
   const navigate = useNavigate()
   const [sidebar, setSideBar] = useState(false)
-  const {user} = useUser()
+  const { isLoaded, user } = useUser()
+
+  if (!isLoaded) {
+    return (
+      <div className='flex items-center justify-center h-screen text-gray-600' role='status'>
+        Checking your session...
+      </div>
+    )
+  }
 
   return user ? (
     <div className='flex flex-col justify-start items-start h-screen'>
 
       <nav className='w-full px-8 min-h-14 flex items-center justify-between border-b border-gray-200'>
         <img className='cursor-pointer w-32 sm:w-44' src={assets.logo} alt="" onClick={() => navigate('/')} />
+
+        {/* This is for smaller screen view*/}
         {
           sidebar ? <X onClick={() => setSideBar(false)} className='w-6 h-6 text-gray-600 sm:hidden' />
             : <Menu className='w-6 h-6 text-gray-600 sm:hidden' onClick={() => setSideBar(true)} />
@@ -30,7 +40,7 @@ const Layout = () => {
 
 
     </div>
-  ) : 
+  ) :
   (
     <div className='flex items-center justify-center h-screen'>
       <SignIn />

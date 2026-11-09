@@ -13,7 +13,7 @@ const FileUploadField = ({ file, onChange, accept, theme = 'orange', required })
     <div className='mt-2 flex items-center gap-2 rounded-md border border-gray-300 bg-gray-50/50 px-1.5 py-1'>
       <label
         htmlFor={id}
-        className={`shrink-0 cursor-pointer rounded-md bg-gradient-to-r ${themes[theme]} px-2.5 py-1 text-xs font-medium text-white transition hover:opacity-90 active:scale-[0.98]`}
+        className={`shrink-0 cursor-pointer rounded-md bg-linear-to-r ${themes[theme]} px-2.5 py-1 text-xs font-medium text-white transition hover:opacity-90 active:scale-[0.98]`}
       >
         Choose File
       </label>

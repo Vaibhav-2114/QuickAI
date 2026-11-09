@@ -35,10 +35,10 @@ const Sidebar = ({ sidebar, setSideBar }) => {
                             end={to === '/ai'}
                             onClick={() => setSideBar(false)}
                             className={({ isActive }) =>
-                                `px-3.5 py-2.5 flex items-center gap-3 rounded ${isActive ? 'bg-gradient-to-r from-[#3C81F6] to-[#9234EA] text-white' : ''}`
+                                `px-3.5 py-2.5 flex items-center gap-3 rounded ${isActive ? 'bg-linear-to-r from-[#3C81F6] to-[#9234EA] text-white' : ''}`
                             }
-                        >
-                            <Icon className='w-4 h-4' />
+                      >
+                            {React.createElement(Icon, { className: 'w-4 h-4' })}
                             {label}
                         </NavLink>
                     ))}

@@ -75,7 +75,7 @@ const Community = () => {
                   className='w-full aspect-square object-cover rounded-lg'
                 />
 
-                <div className='absolute inset-0 flex gap-2 items-end justify-end group-hover:justify-between p-3 group-hover:bg-gradient-to-b from-transparent to-black/80 text-white rounded-lg'>
+                <div className='absolute inset-0 flex gap-2 items-end justify-end group-hover:justify-between p-3 group-hover:bg-linear-to-b from-transparent to-black/80 text-white rounded-lg'>
                   <p className='text-sm hidden group-hover:block'>{creation.prompt}</p>
                   <div className='flex gap-1 items-center'>
                     <p>{(creation.likes ?? []).length}</p>
