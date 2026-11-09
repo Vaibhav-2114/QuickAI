@@ -21,9 +21,11 @@
     "express": "^5.2.1",
     "multer": "^2.1.1",
     "openai": "^6.32.0",
-    "pdf-parse": "^2.4.5"
+    "unpdf": "^2.1.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@cloudflare/workers-types": "^5.20261109.1",
+    "nodemon": "^3.1.14",
+    "wrangler": "^4.158.0"
   }
 }

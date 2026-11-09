@@ -3,7 +3,7 @@ import sql from '../configs/db.js'
 import { clerkClient } from '@clerk/express'
 import { v2 as cloudinary } from 'cloudinary'
 import fs from 'fs'
-import { PDFParse } from 'pdf-parse'
+import { extractText, getDocumentProxy } from 'unpdf'
 import { createGeminiCompletion, getGeminiErrorMessage } from '../utils/gemini.js'
 
 const incrementFreeUsage = async (userId, free_usage) => {
@@ -204,7 +204,7 @@ export const removeImageBackground = async (req, res) => {
             return res.json({ success: false, message: "No image uploaded." })
         }
 
-        const imageBuffer = fs.readFileSync(image.path)
+        const imageBuffer = image.buffer
         const blob = new Blob([imageBuffer], { type: image.mimetype })
         const formData = new FormData()
         formData.append('image_file', blob, image.originalname)
@@ -249,7 +249,8 @@ export const removeImageObject = async (req, res) => {
             return res.json({ success: false, message: "Please describe the object to remove." })
         }
 
-        const { public_id } = await cloudinary.uploader.upload(image.path)
+        const dataUri = `data:${image.mimetype};base64,${image.buffer.toString('base64')}`
+        const { public_id } = await cloudinary.uploader.upload(dataUri)
 
         const imageUrl = cloudinary.url(public_id, {
             transformation: [{ effect: `gen_remove:${object.trim()}` }],
@@ -270,7 +271,6 @@ export const removeImageObject = async (req, res) => {
 
 export const resumeReview = async (req, res) => {
     const resume = req.file
-    let parser
     try {
         const { userId } = req.auth()
         const plan = req.plan;
@@ -287,11 +287,10 @@ export const resumeReview = async (req, res) => {
             return res.json({ success: false, message: "Resume file size exceeds allowed size (5MB)" })
         }
 
-        const dataBuffer = fs.readFileSync(resume.path)
-        parser = new PDFParse({ data: dataBuffer })
-        const pdfData = await parser.getText()
+        const pdf = await getDocumentProxy(new Uint8Array(resume.buffer))
+        const { text } = await extractText(pdf, { mergePages: true })
 
-        const reviewPrompt = buildResumeReviewPrompt(pdfData.text)
+        const reviewPrompt = buildResumeReviewPrompt(text)
 
         const content = await createGeminiCompletion({
             messages: [{ role: "user", content: reviewPrompt }],
@@ -305,13 +304,6 @@ export const resumeReview = async (req, res) => {
         console.log('RESUME_REVIEW_ERROR:', error)
         res.json({ success: false, message: getGeminiErrorMessage(error) })
     } finally {
-        if (parser) {
-            try {
-                await parser.destroy()
-            } catch (destroyError) {
-                console.log('PDF_PARSER_DESTROY_ERROR:', destroyError)
-            }
-        }
         deleteUploadedFile(resume)
     }
 }

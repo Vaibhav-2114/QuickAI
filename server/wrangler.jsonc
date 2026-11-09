@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "my-express-worker",
+  "main": "server.js", // Point this to your main Express file
+  "compatibility_date": "2026-11-04",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "enable_nodejs_http_modules",
+    "enable_nodejs_http_server_modules" // Crucial for Express to work
+  ]
+}
